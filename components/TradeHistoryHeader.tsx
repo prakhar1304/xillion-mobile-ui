@@ -1,3 +1,5 @@
+"use client";
+
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
@@ -29,6 +31,12 @@ export const TradeHistoryHeader = ({
           style={styles.backButton}
         >
           <Ionicons name="chevron-back" size={28} color="white" />
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>Trade History</Text>
+
+        <TouchableOpacity style={styles.iconButton}>
+          <Ionicons name="search-outline" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -96,9 +104,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
   },
   backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  iconButton: {
     width: 40,
     height: 40,
     justifyContent: "center",

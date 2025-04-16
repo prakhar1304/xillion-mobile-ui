@@ -26,10 +26,10 @@ export default function ProfileScreen() {
       >
         <View style={styles.profileInfo}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>RK</Text>
+            <Text style={styles.avatarText}>PK</Text>
           </View>
-          <Text style={styles.name}>Rahul Kumar</Text>
-          <Text style={styles.email}>rahul.kumar@example.com</Text>
+          <Text style={styles.name}>PRAKHAR MADHARIA</Text>
+          <Text style={styles.email}>PK123@example.com</Text>
         </View>
       </LinearGradient>
 

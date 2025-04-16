@@ -1,3 +1,5 @@
+"use client";
+
 import {
   View,
   Text,
@@ -6,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface TradeFilterChipsProps {
   selectedFilter: string;
@@ -19,6 +21,13 @@ export const TradeFilterChips = ({
 }: TradeFilterChipsProps) => {
   const { theme } = useTheme();
 
+  const filters = [
+    { id: "all", label: "All" },
+    { id: "shortTerm", label: "Short Term" },
+    { id: "mediumTerm", label: "Medium Term" },
+    { id: "longTerm", label: "Long Term" },
+  ];
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -26,114 +35,42 @@ export const TradeFilterChips = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <TouchableOpacity
-          style={[
-            styles.chip,
-            selectedFilter === "all" && styles.selectedChip,
-            {
-              backgroundColor:
-                selectedFilter === "all" ? theme.primary : "transparent",
-              borderColor: theme.border,
-            },
-          ]}
-          onPress={() => onFilterChange("all")}
-        >
-          <Ionicons
-            name="checkmark-circle"
-            size={16}
-            color={selectedFilter === "all" ? "white" : theme.textSecondary}
-            style={styles.chipIcon}
-          />
-          <Text
-            style={[
-              styles.chipText,
-              {
-                color: selectedFilter === "all" ? "white" : theme.textSecondary,
-              },
-            ]}
-          >
-            All positional Liquide trades
-          </Text>
-        </TouchableOpacity>
+        {filters.map((filter) => {
+          const isSelected = selectedFilter === filter.id;
 
-        <TouchableOpacity
-          style={[
-            styles.chip,
-            selectedFilter === "shortTerm" && styles.selectedChip,
-            {
-              backgroundColor:
-                selectedFilter === "shortTerm" ? theme.primary : "transparent",
-              borderColor: theme.border,
-            },
-          ]}
-          onPress={() => onFilterChange("shortTerm")}
-        >
-          <Text
-            style={[
-              styles.chipText,
-              {
-                color:
-                  selectedFilter === "shortTerm"
-                    ? "white"
-                    : theme.textSecondary,
-              },
-            ]}
-          >
-            Short Term
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.chip,
-            selectedFilter === "mediumTerm" && styles.selectedChip,
-            {
-              backgroundColor:
-                selectedFilter === "mediumTerm" ? theme.primary : "transparent",
-              borderColor: theme.border,
-            },
-          ]}
-          onPress={() => onFilterChange("mediumTerm")}
-        >
-          <Text
-            style={[
-              styles.chipText,
-              {
-                color:
-                  selectedFilter === "mediumTerm"
-                    ? "white"
-                    : theme.textSecondary,
-              },
-            ]}
-          >
-            Medium Term
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.chip,
-            selectedFilter === "longTerm" && styles.selectedChip,
-            {
-              backgroundColor:
-                selectedFilter === "longTerm" ? theme.primary : "transparent",
-              borderColor: theme.border,
-            },
-          ]}
-          onPress={() => onFilterChange("longTerm")}
-        >
-          <Text
-            style={[
-              styles.chipText,
-              {
-                color:
-                  selectedFilter === "longTerm" ? "white" : theme.textSecondary,
-              },
-            ]}
-          >
-            Long Term
-          </Text>
-        </TouchableOpacity>
+          return isSelected ? (
+            <LinearGradient
+              key={filter.id}
+              colors={theme.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.selectedChip}
+            >
+              <TouchableOpacity
+                onPress={() => onFilterChange(filter.id)}
+                style={styles.chipTouchable}
+              >
+                <Text style={styles.selectedChipText}>{filter.label}</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          ) : (
+            <TouchableOpacity
+              key={filter.id}
+              onPress={() => onFilterChange(filter.id)}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: "rgba(157, 78, 221, 0.1)",
+                  borderColor: "rgba(157, 78, 221, 0.3)",
+                },
+              ]}
+            >
+              <Text style={[styles.chipText, { color: theme.textSecondary }]}>
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -141,29 +78,33 @@ export const TradeFilterChips = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   scrollContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingRight: 20,
   },
   chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
     paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
     marginRight: 10,
     borderWidth: 1,
   },
   selectedChip: {
-    borderWidth: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
   },
-  chipIcon: {
-    marginRight: 6,
+  chipTouchable: {
+    width: "100%",
+    alignItems: "center",
   },
   chipText: {
-    fontSize: 14,
     fontWeight: "500",
+  },
+  selectedChipText: {
+    color: "white",
+    fontWeight: "600",
   },
 });
