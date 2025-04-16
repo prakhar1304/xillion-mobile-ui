@@ -242,7 +242,7 @@ export const ExecuteButton = () => {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingBottom: 20,
   },
   buttonContainer: {
     height: 60,
