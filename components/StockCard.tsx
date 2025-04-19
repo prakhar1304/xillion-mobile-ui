@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
   stockName: {
     fontSize: 18,
     fontWeight: "bold",
+    fontFamily: "Lato",
   },
   gainPercentage: {
     fontSize: 15,

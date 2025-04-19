@@ -1,5 +1,3 @@
-"use client";
-
 import { useRef, useState, useEffect } from "react";
 import {
   View,
@@ -14,20 +12,32 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Video } from "expo-av";
 
 const { width } = Dimensions.get("window");
 const BUTTON_WIDTH = width - 40;
 const SWIPE_THRESHOLD = BUTTON_WIDTH * 0.7;
 
 export const ExecuteButton = () => {
+  const videoRef = useRef(null);
   const { theme } = useTheme();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [videoFinished, setVideoFinished] = useState(false);
+  const [exchangeDetails, setExchangeDetails] = useState({
+    amount: 0.6948,
+    currency: "ETH",
+    value: 1797.45,
+  });
   const pan = useRef(new Animated.ValueXY()).current;
   const [sliderPosition, setSliderPosition] = useState(0);
 
+  // Animation values for the cat
+  const catY = useRef(new Animated.Value(-100)).current;
+  const catOpacity = useRef(new Animated.Value(0)).current;
+
   // Create an animated value for the gradient width
-  // This will control how much of the gradient is visible as the slider moves
   const gradientWidth = useRef(new Animated.Value(0)).current;
 
   const resetPosition = () => {
@@ -39,32 +49,69 @@ export const ExecuteButton = () => {
   };
 
   // Update the gradient width when slider position changes
-  // This effect synchronizes the gradient width with the slider position
   useEffect(() => {
-    // We add the width of the slider button (60) to ensure the gradient extends fully to the right edge of the button
-    // This creates the "painting" effect as the button moves
     const width = sliderPosition + 60;
-
     Animated.timing(gradientWidth, {
       toValue: width,
-      duration: 0, // No delay for immediate response
+      duration: 0,
       useNativeDriver: false,
     }).start();
   }, [sliderPosition]);
+
+  // Reset video state when success modal is closed
+  useEffect(() => {
+    if (!showSuccessModal) {
+      setVideoFinished(false);
+    }
+  }, [showSuccessModal]);
+
+  // Play video when the success modal appears
+  useEffect(() => {
+    if (showSuccessModal && videoRef.current) {
+      // Reset position for animation
+      catY.setValue(-100);
+      catOpacity.setValue(0);
+
+      // Animate the cat coming down
+      Animated.sequence([
+        Animated.delay(300),
+        Animated.parallel([
+          Animated.timing(catY, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(catOpacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+
+      // Play the video when success modal appears
+      videoRef.current.playAsync();
+    }
+  }, [showSuccessModal]);
+
+  // Handle video playback status updates
+  const handlePlaybackStatusUpdate = (status) => {
+    if (status.didJustFinish) {
+      setVideoFinished(true);
+    }
+  };
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dx > 0 && gestureState.dx <= BUTTON_WIDTH - 70) {
-          // Update the slider position and the visual position of the button
           pan.x.setValue(gestureState.dx);
           setSliderPosition(gestureState.dx);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx > SWIPE_THRESHOLD) {
-          // If swiped past threshold, animate to the end and show confirmation
           Animated.timing(pan, {
             toValue: { x: BUTTON_WIDTH - 70, y: 0 },
             duration: 200,
@@ -74,7 +121,6 @@ export const ExecuteButton = () => {
             resetPosition();
           });
         } else {
-          // Otherwise reset back to the start
           resetPosition();
         }
       },
@@ -86,23 +132,16 @@ export const ExecuteButton = () => {
     setShowSuccessModal(true);
   };
 
-  // Create the animated gradient width style
-  // This style controls the container of the gradient
   const animatedGradientStyle = {
-    // Use the animated width value to dynamically adjust the width of the gradient container
     width: gradientWidth,
     position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
-    // Important: removing any border radius from this container allows the gradient
-    // to stay connected with the slider button without any gaps
     overflow: "hidden",
-    borderTopLeftRadius: 30,
-    borderBottomLeftRadius: 30,
-    borderRadius: 30,
-
-    // Adding zIndex to ensure gradient stays below the text and slider
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderRadius: 20,
     zIndex: 1,
   };
 
@@ -112,31 +151,19 @@ export const ExecuteButton = () => {
         <View
           style={[styles.buttonContainer, { backgroundColor: theme.execute }]}
         >
-          {/* 
-            Animated gradient background: 
-            - This view's width is controlled by the slider position
-            - As the slider moves right, the gradient expands with it
-            - The LinearGradient fills the entire available width
-          */}
           <Animated.View style={animatedGradientStyle}>
             <LinearGradient
-              colors={theme.primaryGradient}
+              colors={theme.lighterPrimaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{ width: BUTTON_WIDTH, height: "100%" }}
             />
           </Animated.View>
 
-          {/* 
-            Slider button:
-            - This is the draggable button element
-            - Its position is controlled by the pan.x animated value
-            - zIndex: 3 ensures it stays on top of everything else
-          */}
           <Animated.View
             style={[
               styles.slider,
-              { backgroundColor: theme.executeIcon },
+              { backgroundColor: theme.primary },
               { transform: [{ translateX: pan.x }] },
             ]}
             {...panResponder.panHandlers}
@@ -144,11 +171,6 @@ export const ExecuteButton = () => {
             <Ionicons name="flash" size={28} color="white" />
           </Animated.View>
 
-          {/* 
-            Button text:
-            - This text is centered in the button
-            - zIndex: 2 ensures it stays above the gradient but below the slider
-          */}
           <Text style={[styles.buttonText, { color: theme.text }]}>
             EXECUTE ALL
           </Text>
@@ -203,34 +225,62 @@ export const ExecuteButton = () => {
         </View>
       </Modal>
 
-      {/* Success Modal */}
+      {/* Success Modal with Cat Animation or Tick Icon */}
       <Modal
         transparent={true}
         visible={showSuccessModal}
         animationType="fade"
         onRequestClose={() => setShowSuccessModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-            <View
-              style={[styles.successIcon, { backgroundColor: theme.success }]}
-            >
-              <Ionicons name="checkmark" size={40} color="white" />
+        <View
+          style={[
+            styles.successModalOverlay,
+            { backgroundColor: theme.background },
+          ]}
+        >
+          <View style={styles.successModalContent}>
+            <View style={styles.catContainer}>
+              {videoFinished ? (
+                <View style={styles.successIconContainer}>
+                  <MaterialIcons
+                    name="check-circle"
+                    size={120}
+                    color={theme.primary}
+                  />
+                </View>
+              ) : (
+                <Video
+                  ref={videoRef}
+                  source={require("../assets/v/cat.mp4")}
+                  style={styles.video}
+                  resizeMode="cover"
+                  shouldPlay={false}
+                  isLooping={false}
+                  useNativeControls={false}
+                  onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+                />
+              )}
             </View>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
-              Orders Executed Successfully!
+
+            {/* Success Text */}
+            <Text style={[styles.successTitle, { color: theme.text }]}>
+              Successfully Executed!
             </Text>
             <Text
-              style={[styles.modalDescription, { color: theme.textSecondary }]}
+              style={[
+                styles.successDescription,
+                { color: theme.textSecondary },
+              ]}
             >
-              All recommended trades have been placed. You can track their
-              status in your portfolio.
+              You have successfully Executed
             </Text>
+
+            {/* Done Button */}
             <TouchableOpacity
-              style={[styles.fullButton, { backgroundColor: theme.primary }]}
+              style={[styles.doneButton, { backgroundColor: theme.primary }]}
               onPress={() => setShowSuccessModal(false)}
             >
-              <Text style={styles.fullButtonText}>Done</Text>
+              <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -246,19 +296,19 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     height: 60,
-    borderRadius: 30,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-    overflow: "hidden", // Important to clip any overflow from the gradient and slider
+    overflow: "hidden",
+    elevation: 1,
   },
-
   slider: {
     position: "absolute",
     left: 0,
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     elevation: 4,
@@ -266,17 +316,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    zIndex: 3, // Highest z-index to ensure it's on top
+    zIndex: 3,
+  },
+  video: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
   },
   buttonText: {
     fontSize: 18,
     fontWeight: "bold",
     letterSpacing: 1,
-    zIndex: 2, // Higher than gradient but lower than slider
+    zIndex: 2,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.57)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -286,6 +341,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(86, 6, 120, 0.81)",
   },
   modalTitle: {
     fontSize: 20,
@@ -321,21 +378,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  successIcon: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  successModalOverlay: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
   },
-  fullButton: {
+  successModalContent: {
     width: "100%",
-    paddingVertical: 14,
-    borderRadius: 8,
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  catContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 20,
+    height: 350,
+  },
+  successIconContainer: {
+    width: "100%",
+    height: 350,
+    justifyContent: "center",
     alignItems: "center",
   },
-  fullButtonText: {
+  successTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  successDescription: {
+    fontSize: 16,
+    textAlign: "center",
+  },
+  exchangeDetails: {
+    flexDirection: "row",
+    marginVertical: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  exchangeAmount: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  exchangeFor: {
+    fontSize: 18,
+  },
+  exchangeValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  doneButton: {
+    width: "100%",
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: "center",
+    marginTop: 40,
+  },
+  doneButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: "white",
